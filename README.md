@@ -21,7 +21,7 @@ To compile `torus`, simply execute the following script:
 - `./build.sh`
 
 ### Usage
-- `./torus <path/to/vmlinuz>`
+- `./torus <decompressed_vmlinuz>`
 
 ## Credits
 ```
