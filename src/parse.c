@@ -54,7 +54,7 @@ address_t *parse_physical_ranges(void) {
 }
 
 /**
- * @brief Resolves the location of System.map.
+ * @brief Parses the address of a specified symbol.
  * @param symbol The symbol that will be looked up.
  * @param system_map The location of System.map.
  * @returns The address of the symbol, 0 if otherwise.

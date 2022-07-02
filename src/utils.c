@@ -50,7 +50,7 @@ uint8_t *resolve_system_map(void) {
 }
 
 /**
- * @brief Dumps the bytes at the given address in /proc/kcore.
+ * @brief Dumps the bytes at a given address in /proc/kcore.
  * @param descriptor The file descriptor.
  * @param nbytes The amount of bytes that will be dumped.
  * @param address The memory address that the data will be read from.
@@ -72,7 +72,7 @@ uint8_t *dump_kernel_address_bytes(const int32_t descriptor, const size_t nbytes
 }
 
 /**
- * @brief Dumps the bytes at the given address in System.map.
+ * @brief Dumps the bytes at a given address in System.map.
  * @param descriptor The file descriptor.
  * @param nbytes The amount of bytes that will be dumped.
  * @param address The memory address that the data will be read from.
