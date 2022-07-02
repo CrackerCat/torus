@@ -6,7 +6,7 @@ An x86/x86-64 experimental PoC for dumping the addresses & disassembly of kernel
 </div>
 
 ## Description
-`torus` is an experimental PoC (Proof-Of-Concept) utility that performs reads specific bytes from a decompressed `vmlinuz` kernel image by using `System.map`, so that signature scanning can be performed to find the addresses of kernel functions within kernel virtual memory from userspace.
+`torus` is an experimental PoC (Proof-Of-Concept) utility that reads specific bytes from a decompressed `vmlinuz` kernel image by using `System.map`, so that signature scanning can be performed to find the addresses of kernel functions within kernel virtual memory from userspace.
 
 ### Features
 - Disassembly output
