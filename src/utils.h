@@ -19,24 +19,27 @@
 #ifndef __UTILS_H
 #define __UTILS_H
 
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <dirent.h>
 #include <limits.h>
+#include <unistd.h>
 #include <stdbool.h>
 #include <inttypes.h>
 
 
 /*
     *    src/utils.h
-    *    Date: 06/27/22
+    *    Date: 07/02/22
     *    Author: @xmmword
 */
 
 
 uint8_t *resolve_system_map(void);
-void dump_bytes(const int32_t amount, const uint8_t *buffer);
+uint8_t *dump_system_map_bytes(const int32_t descriptor, const size_t nbytes, const uintptr_t address);
+uint8_t *dump_kernel_address_bytes(const int32_t descriptor, const size_t nbytes, const uintptr_t address);
 
 #endif

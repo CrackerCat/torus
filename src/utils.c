@@ -21,25 +21,10 @@
 
 /*
     *    src/utils.c
-    *    Date: 06/27/22
+    *    Date: 07/02/22
     *    Author: @xmmword
 */
 
-
-/**
- * @brief Dumps the bytes of a given array.
- * @param amount The amount of bytes to dump.
- * @param buffer The array.
- * @returns NULL if the location couldn't be resolved, returns the string if otherwise.
- */
-
-void dump_bytes(const int32_t amount, const uint8_t *buffer) {
-  for (uint32_t i = 0; i < strnlen(buffer, amount); ++i)
-    if (buffer[i])
-      printf("0x%02x ", buffer[i]);
-
-  putchar('\n');
-}
 
 /**
  * @brief Resolves the location of System.map.
@@ -62,4 +47,48 @@ uint8_t *resolve_system_map(void) {
 
   closedir(directory);
   return path;
+}
+
+/**
+ * @brief Dumps the bytes at the given address in /proc/kcore.
+ * @param descriptor The file descriptor.
+ * @param nbytes The amount of bytes that will be dumped.
+ * @param address The memory address that the data will be read from.
+ * @returns A pointer to the dumped bytes.
+ */
+
+uint8_t *dump_kernel_address_bytes(const int32_t descriptor, const size_t nbytes, const uintptr_t address) {
+  uint8_t *buffer = (uint8_t *)malloc(nbytes);
+  if (!buffer)
+    return NULL;
+  
+  if (lseek(descriptor, address, SEEK_SET) == -1 || read(descriptor, buffer, sizeof(buffer)) == -1) {
+    free(buffer);
+    close(descriptor);
+    return NULL;
+  }
+
+  return buffer;
+}
+
+/**
+ * @brief Dumps the bytes at the given address in System.map.
+ * @param descriptor The file descriptor.
+ * @param nbytes The amount of bytes that will be dumped.
+ * @param address The memory address that the data will be read from.
+ * @returns A pointer to the dumped bytes.
+ */
+
+uint8_t *dump_system_map_bytes(const int32_t descriptor, const size_t nbytes, const uintptr_t address) {
+  uint8_t *buffer = (uint8_t *)malloc(nbytes);
+  if (!buffer)
+    return NULL;
+
+  if (lseek(descriptor, address, SEEK_SET) == -1 || read(descriptor, buffer, sizeof(buffer)) == -1) {
+    free(buffer);
+    close(descriptor);
+    return NULL;
+  }
+
+  return buffer;
 }

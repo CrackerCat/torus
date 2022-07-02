@@ -26,7 +26,7 @@
 
 /*
     *    src/torus.c
-    *    Date: 06/27/22
+    *    Date: 07/02/22
     *    Author: @xmmword
 */
 
@@ -39,7 +39,7 @@
  */
 
 int32_t main(int32_t argc, int8_t **argv) {
-  fprintf(stderr, "Usage: %s <path/to/vmlinuz>\n\n", argv[0]);
+  fprintf(stderr, "Usage: %s <decompressed_vmlinuz>\n\n", argv[0]);
 
   if (argc < 2)
     return EXIT_FAILURE;

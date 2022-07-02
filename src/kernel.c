@@ -24,7 +24,7 @@
 
 /*
     *    src/kernel.c
-    *    Date: 06/27/22
+    *    Date: 07/02/22
     *    Author: @xmmword
 */
 
@@ -40,50 +40,6 @@ static inline __attribute__((always_inline)) uintptr_t return_file_offset(const 
 }
 
 /**
- * @brief Dumps the bytes at the given address in /proc/kcore.
- * @param descriptor The file descriptor.
- * @param nbytes The amount of bytes that will be dumped.
- * @param address The memory address that the data will be read from.
- * @returns A pointer to the dumped bytes.
- */
-
-uint8_t *dump_kernel_address_bytes(const int32_t descriptor, const size_t nbytes, const uintptr_t address) {
-  uint8_t *buffer = (uint8_t *)malloc(nbytes);
-  if (!buffer)
-    return NULL;
-  
-  if (lseek(descriptor, address, SEEK_SET) == -1 || read(descriptor, buffer, sizeof(buffer)) == -1) {
-    free(buffer);
-    close(descriptor);
-    return NULL;
-  }
-
-  return buffer;
-}
-
-/**
- * @brief Dumps the bytes at the given address in System.map.
- * @param descriptor The file descriptor.
- * @param nbytes The amount of bytes that will be dumped.
- * @param address The memory address that the data will be read from.
- * @returns A pointer to the dumped bytes.
- */
-
-uint8_t *dump_system_map_bytes(const int32_t descriptor, const size_t nbytes, const uintptr_t address) {
-  uint8_t *buffer = (uint8_t *)malloc(nbytes);
-  if (!buffer)
-    return NULL;
-
-  if (lseek(descriptor, address, SEEK_SET) == -1 || read(descriptor, buffer, sizeof(buffer)) == -1) {
-    free(buffer);
-    close(descriptor);
-    return NULL;
-  }
-
-  return buffer;
-}
-
-/**
  * @brief Dumps the data at the given segment and searches for the signature.
  * @param descriptor The file descriptor.
  * @param signature The sequence of bytes that will be searched for.
@@ -96,12 +52,9 @@ uintptr_t dump_kernel_segment(const int32_t descriptor, const uint8_t *signature
   uintptr_t address = 0, offset = program_header.p_offset;
 
   uint8_t *buffer = (uint8_t *)malloc(0x100000);
-  size_t data, size = program_header.p_memsz, dumped_data = size;
+  size_t data, dumped_data = program_header.p_memsz;
 
-  if (!buffer)
-    return 0;
-
-  if (lseek64(descriptor, program_header.p_offset, SEEK_SET) == -1)
+  if (!buffer || lseek64(descriptor, program_header.p_offset, SEEK_SET) == -1)
     return 0;
 
   while (dumped_data) {
@@ -138,9 +91,9 @@ uintptr_t dump_kernel_segment(const int32_t descriptor, const uint8_t *signature
  */
 
 uintptr_t find_physical_segment(const int32_t descriptor, const Elf64_Ehdr *header, const Elf64_Phdr program_header, const address_t *addresses, const uint8_t *signature) {
-  for (uint32_t k = 0; k < 10; ++k) { /* Iterating over the array of structs containing parsed physical addresses. */
-    if (addresses[k].addr_start && (program_header.p_paddr == addresses[k].addr_start)) { /* Check to see if the addresses match. */
-      uintptr_t address = dump_kernel_segment(descriptor, signature, program_header);
+  for (uint32_t k = 0; k < 10; ++k) {
+    if (addresses[k].addr_start && (program_header.p_paddr == addresses[k].addr_start)) {
+      const uintptr_t address = dump_kernel_segment(descriptor, signature, program_header);
 
       if (address)
         return address;
@@ -175,7 +128,6 @@ uintptr_t kcore_signature_scan(const uint8_t *signature, const address_t *addres
 
   for (uint32_t i = 0; i < header->e_phnum; ++i) {
     uintptr_t temp = find_physical_segment(descriptor, header, program_header[i], addresses, signature);
-
     if (!temp)
       continue;
   
@@ -198,6 +150,7 @@ uintptr_t kcore_signature_scan(const uint8_t *signature, const address_t *addres
  * @returns An address that contains the signature, 0 if otherwise.
  */
 
+#ifdef DEBUG
 void disassemble_function_opcodes(const uint8_t *symbol, const uint8_t *original_function, const uint8_t *modified_function) {
   csh cs_handle = {0};
   cs_insn *modified_instructions = {0}, *original_instructions = {0};
@@ -205,7 +158,7 @@ void disassemble_function_opcodes(const uint8_t *symbol, const uint8_t *original
   if (cs_open(CS_ARCH_X86, CS_MODE_64, &cs_handle) != CS_ERR_OK)
     return;
 
-  size_t function_amount = cs_disasm(cs_handle, original_function, (sizeof(original_function) - 1), 0x1000, 0, &original_instructions),
+  size_t function_amount = cs_disasm(cs_handle, original_function, 30, 0x1000, 0, &original_instructions),
     modified_amount = cs_disasm(cs_handle, modified_function, (sizeof(modified_function) - 1), 0x1000, 0, &modified_instructions);
 
   if (function_amount < 0 && modified_amount < 0) {
@@ -213,78 +166,72 @@ void disassemble_function_opcodes(const uint8_t *symbol, const uint8_t *original
     return;
   }
 
-  printf("Disassembly of the original [%s]:\n", symbol);
+  printf("Disassembly of the [%s] in System.map:\n", symbol);
   
   for (size_t i = 0; i < function_amount; ++i)
     printf("\t%s\t\t%s\n", original_instructions[i].mnemonic, original_instructions[i].op_str);
 
-  printf("Disassembly of the modified [%s]:\n", symbol);
+  printf("Disassembly of [%s] in kernel virtual memory:\n", symbol);
   
   for (size_t i = 0; i < modified_amount; ++i)
     printf("\t%s\t\t%s\n", modified_instructions[i].mnemonic, modified_instructions[i].op_str);
 
+  putchar('\n');
+
   cs_free(original_instructions, function_amount);
   cs_free(modified_instructions, modified_amount);
-
   cs_close(&cs_handle);
 }
+#endif
 
 /**
- * @brief Compares the executable instructions, and reports any anomalies.
+ * @brief Searches for the function in kernel virtual memory, and reports it.
  * @param addresses A structure containing the parsed physical address range.
  * @param system_map The location of System.map.
  * @param vm_descriptor The file descriptor for the decompressed kernel image.
  * @param kcore_descriptor The file descriptor for /proc/kcore.
  * @param system_descriptor The file descriptor for System.map.
  * @param symbol The symbol.
- * @param anomalies The amount anomalies reported.
+ * @param results The amount of functions reported.
  */
 
 void scan_executable_instructions(const address_t *addresses, const uint8_t *system_map, const int32_t vm_descriptor, 
-                                  const int32_t kcore_descriptor, const int32_t system_descriptor, const uint8_t *symbol, int32_t anomalies) {
+                                  const int32_t kcore_descriptor, const int32_t system_descriptor, const uint8_t *symbol, uint32_t results) {
   
   uint8_t *modified_bytes = NULL, *original_bytes = dump_system_map_bytes(vm_descriptor, 300, return_file_offset(parse_system_map_address(symbol, system_map)) + 5);
   if (!original_bytes)
     return;
 
-  uintptr_t address = kcore_signature_scan(original_bytes, addresses);
+  const uintptr_t address = kcore_signature_scan(original_bytes, addresses);
   if (!address)
     return;
 
-  if (!(modified_bytes = dump_kernel_address_bytes(kcore_descriptor, 300, address)))
+  if (!(modified_bytes = dump_kernel_address_bytes(kcore_descriptor, 300, (address - 5))))
     return;
 
+  printf("Found [%s] at address [0x%lx]\n", symbol, address);
+  ++results;
+
 #ifdef DEBUG
-  //printf("Scanning [%s] at address [0x%lx]\n", symbol, address);
-  printf("Kill found!\n");
-  dump_bytes(300, modified_bytes);
-
-  printf("Original Bytes:\n");
-  dump_bytes(300, original_bytes);
+  disassemble_function_opcodes(symbol, original_bytes, modified_bytes);
 #endif
-
-  if (memcmp(original_bytes, modified_bytes, sizeof(modified_bytes))) {
-    printf("[%s has been modified]!\n", symbol);
-    disassemble_function_opcodes(symbol, original_bytes, modified_bytes);
-    anomalies++;
-  }
 
   free(modified_bytes);
   free(original_bytes);
 }
 
 /**
- * @brief Performs a comparison of the executable instructions, reports any found anomalies.
+ * @brief Iterates over System.map entries.
  * @param system_map The location of System.map.
  * @param vm_descriptor The file descriptor for the decompressed kernel image.
  * @param kcore_descriptor The file descriptor for /proc/kcore.
  * @param system_descriptor The file descriptor for System.map.
  */
 
-int32_t execute_comparison(const uint8_t *system_map, const int32_t vm_descriptor, const int32_t kcore_descriptor, const int32_t system_descriptor) {
+uint32_t iterate_system_map(const uint8_t *system_map, const int32_t vm_descriptor, const int32_t kcore_descriptor, const int32_t system_descriptor) {
+  uint32_t results = 0;
+  
   syscall_t entry = {0};
-
-  uint32_t anomalies = 0;
   uint8_t buffer[BUFSIZ] = {0};
   
   FILE *descriptor = fopen(system_map, "r");
@@ -299,14 +246,12 @@ int32_t execute_comparison(const uint8_t *system_map, const int32_t vm_descripto
     if (!sscanf(buffer, "%lx %c %s", &entry.address, &entry.type, entry.symbol))
       continue;
 
-    if (strncmp(entry.symbol, "__x64_sys", 9))
-      continue;
-
-    scan_executable_instructions(addresses, system_map, vm_descriptor, kcore_descriptor, system_descriptor, entry.symbol, anomalies);
+    if (!strncmp(entry.symbol, "__x64_sys", 9) || !strncmp(entry.symbol, "__ia32", 6) || strstr(entry.symbol, "_eil_addr___ia32") || strstr(entry.symbol, "_eil_addr___x64"))
+      scan_executable_instructions(addresses, system_map, vm_descriptor, kcore_descriptor, system_descriptor, entry.symbol, results);
   }
 
   fclose(descriptor);
-  return anomalies;
+  return results;
 }
 
 /**
@@ -331,6 +276,11 @@ bool init_torus(const uint8_t *vmlinuz) {
     parse_system_map_address("_text", system_map)
   );
 
-  printf("Scan has complete, [%d] anomalies/modifications have been found!\n", execute_comparison(system_map, vm_descriptor, kcore_descriptor, system_descriptor));
+  printf("Scan has complete, kernel functions [%d] have been found!\n", iterate_system_map(system_map, vm_descriptor, kcore_descriptor, system_descriptor));
+
+  close(vm_descriptor);
+  close(kcore_descriptor);
+  close(system_descriptor);
+
   return true;
 }

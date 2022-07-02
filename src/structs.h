@@ -25,7 +25,7 @@
 
 /*
     *    src/structs.h
-    *    Date: 06/27/22
+    *    Date: 07/02/22
     *    Author: @xmmword
 */
 
