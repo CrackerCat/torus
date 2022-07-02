@@ -147,7 +147,6 @@ uintptr_t kcore_signature_scan(const uint8_t *signature, const address_t *addres
  * @param symbol The symbol name. 
  * @param original_function The bytes of the original function.
  * @param modified_function The bytes of the modified function.
- * @returns An address that contains the signature, 0 if otherwise.
  */
 
 #ifdef DEBUG
@@ -226,6 +225,7 @@ void scan_executable_instructions(const address_t *addresses, const uint8_t *sys
  * @param vm_descriptor The file descriptor for the decompressed kernel image.
  * @param kcore_descriptor The file descriptor for /proc/kcore.
  * @param system_descriptor The file descriptor for System.map.
+ * @returns The amount of results.
  */
 
 uint32_t iterate_system_map(const uint8_t *system_map, const int32_t vm_descriptor, const int32_t kcore_descriptor, const int32_t system_descriptor) {

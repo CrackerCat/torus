@@ -65,7 +65,10 @@ uintptr_t kcore_signature_scan(const uint8_t *signature, const address_t *addres
 uintptr_t dump_kernel_segment(const int32_t descriptor, const uint8_t *signature, const Elf64_Phdr program_header);
 uintptr_t find_physical_segment(const int32_t descriptor, const Elf64_Ehdr *header, const Elf64_Phdr program_header, const address_t *addresses, const uint8_t *signature);
 
+#ifdef DEBUG
 void disassemble_function_opcodes(const uint8_t *symbol, const uint8_t *original_function, const uint8_t *modified_function);
+#endif
+
 void scan_executable_instructions(const address_t *addresses, const uint8_t *system_map, const int32_t vm_descriptor, const int32_t kcore_descriptor, const int32_t system_descriptor, const uint8_t *symbol, uint32_t results);
 
 #endif
