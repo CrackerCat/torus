@@ -2,7 +2,7 @@
 An x86/x86-64 experimental PoC for dumping the addresses & disassembly of kernel functions from userspace.
 
 <div align="center">
-    <img src="https://user-images.githubusercontent.com/105472509/176983932-3edca1ae-f248-41be-8037-3417a71447dc.png" width="750px"><br>
+    <img src="https://user-images.githubusercontent.com/105472509/177005612-84fe91d0-04fc-46fe-a161-84674da903e9.png" width="1000px"><br>
 </div>
 
 ## Description
