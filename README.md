@@ -10,7 +10,7 @@ An x86/x86-64 experimental PoC for dumping the addresses & disassembly of kernel
 
 ### Features
 - Disassembly output
-- Checks for anomalies/modifications within kernel code
+- Reports the addresses of the located kernel functions
 
 ### Built with
 - C
@@ -19,6 +19,11 @@ An x86/x86-64 experimental PoC for dumping the addresses & disassembly of kernel
 ### Compiling
 To compile `torus`, simply execute the following script:
 - `./build.sh`
+
+### Decompressing vmlinuz
+In order to decompress `vmlinuz` (located in `/boot`) so you can pass it to `torus` as an argument, download and run the script provided at:
+
+- `https://github.com/torvalds/linux/blob/master/scripts/extract-vmlinux`
 
 ### Usage
 - `./torus <decompressed_vmlinuz>`
