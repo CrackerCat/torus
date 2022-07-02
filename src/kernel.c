@@ -111,7 +111,7 @@ uintptr_t find_physical_segment(const int32_t descriptor, const Elf64_Ehdr *head
  */
 
 uintptr_t kcore_signature_scan(const uint8_t *signature, const address_t *addresses) {
-  uintptr_t address = 0;
+  uintptr_t temp = 0, address = 0;
   
   Elf64_Ehdr *header = {0};
   Elf64_Phdr *program_header = {0};
@@ -126,14 +126,9 @@ uintptr_t kcore_signature_scan(const uint8_t *signature, const address_t *addres
   if (!(program_header = parse_elf_program_headers(header, descriptor)))
     return 0;
 
-  for (uint32_t i = 0; i < header->e_phnum; ++i) {
-    uintptr_t temp = find_physical_segment(descriptor, header, program_header[i], addresses, signature);
-    if (!temp)
-      continue;
-  
-    address = temp;
-    break;
-  }
+  for (uint32_t i = 0; i < header->e_phnum; ++i)
+    if ((address = find_physical_segment(descriptor, header, program_header[i], addresses, signature)))
+      break;
 
   close(descriptor);
   free(program_header);
