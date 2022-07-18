@@ -271,7 +271,7 @@ bool init_torus(const uint8_t *vmlinuz) {
     parse_system_map_address("_text", system_map)
   );
 
-  printf("Scan has complete, kernel functions [%d] have been found!\n", iterate_system_map(system_map, vm_descriptor, kcore_descriptor, system_descriptor));
+  printf("Scan has completed, kernel functions [%d] have been found!\n", iterate_system_map(system_map, vm_descriptor, kcore_descriptor, system_descriptor));
 
   close(vm_descriptor);
   close(kcore_descriptor);
